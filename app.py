@@ -3,12 +3,14 @@ from speech_to_text import transcribe_audio
 from llm_service import get_gemini_response
 from text_to_speech import text_to_speech_bytes
 
+# 1. Page Configuration
 st.set_page_config(
     page_title="Voice Assistant with LLM",
     page_icon="🎙️",
     layout="centered",
 )
 
+# Custom CSS for a clean, modern appearance
 st.markdown(
     """
     <style>
@@ -24,6 +26,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# 2. Initialize Session State Variables
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -32,6 +35,9 @@ if "last_audio_id" not in st.session_state:
 
 
 def process_user_query(user_text: str):
+    """
+    Orchestrates the pipeline: Save User Msg -> Query Gemini -> Generate TTS -> Save AI Msg.
+    """
     st.session_state.messages.append({
         "role": "user",
         "content": user_text,
@@ -45,15 +51,17 @@ def process_user_query(user_text: str):
         )
 
     if not llm_success:
-        st.error(llm_reply)
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": f"⚠️ {llm_reply}",
+            "audio": None,
+        })
         return
 
     with st.spinner("Generating voice response..."):
         tts_success, audio_result = text_to_speech_bytes(llm_reply)
 
     audio_bytes = audio_result if tts_success else None
-    if not tts_success:
-        st.warning(f"Text reply generated, but audio failed: {audio_result}")
 
     st.session_state.messages.append({
         "role": "assistant",
@@ -62,17 +70,18 @@ def process_user_query(user_text: str):
     })
 
 
+# 3. Header & Sidebar Controls
 st.markdown("<h1 class='main-header'>🎙️ Voice Assistant with LLM</h1>", unsafe_allow_html=True)
 st.caption("Speak into your microphone or type below to chat with Gemini Flash and hear spoken answers.")
 
 with st.sidebar:
-    st.header("Student Details")
+    st.subheader("Student Details")
     st.markdown(
         """
-        - **Name:** Sejal Kakani
-        - **Class:** LY Core 2, MIT SOC
-        - **Enrollment:** ADT23SOCB1003
-        - **Roll No:** 19 | **PS19**
+        * **Name:** Sejal Kakani
+        * **Class:** LY Core 2, MIT SOC
+        * **Enrollment:** ADT23SOCB1003
+        * **Roll No:** 19 | **PS19**
         """
     )
     st.divider()
@@ -91,6 +100,7 @@ with st.sidebar:
         st.session_state.last_audio_id = None
         st.rerun()
 
+# 4. Input Section (Voice + Text Alternative)
 st.subheader("Ask a Question")
 
 tab_voice, tab_text = st.tabs(["🎤 Voice Input", "⌨️ Text Input"])
@@ -110,7 +120,6 @@ with tab_voice:
                 stt_success, stt_result = transcribe_audio(audio_bytes)
 
             if stt_success:
-                st.success(f"**Transcribed Text:** {stt_result}")
                 process_user_query(stt_result)
                 st.rerun()
             else:
@@ -133,6 +142,7 @@ with tab_text:
 
 st.divider()
 
+# 5. Conversation History & Audio Playback Display
 st.subheader("Conversation History")
 
 if not st.session_state.messages:
