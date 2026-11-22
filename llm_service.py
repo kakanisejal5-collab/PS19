@@ -1,19 +1,38 @@
 import os
+import streamlit as st
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
+# Load environment variables from local .env file if present
 load_dotenv()
+
+
+def get_api_key() -> str | None:
+    """
+    Retrieves GEMINI_API_KEY from local .env/environment or Streamlit Cloud Secrets.
+    """
+    key = os.getenv("GEMINI_API_KEY")
+    if key and key != "your_gemini_api_key_here":
+        return key
+
+    try:
+        if "GEMINI_API_KEY" in st.secrets:
+            return st.secrets["GEMINI_API_KEY"]
+    except Exception:
+        pass
+
+    return None
 
 
 def get_gemini_response(user_prompt: str, chat_history: list[dict]) -> tuple[bool, str]:
     """
     Sends the user's message and recent conversation history to Gemini Flash.
     """
-    api_key = os.getenv("GEMINI_API_KEY")
+    api_key = get_api_key()
 
-    if not api_key or api_key == "your_gemini_api_key_here":
-        return False, "API Key missing! Please add your valid GEMINI_API_KEY in the .env file."
+    if not api_key:
+        return False, "API Key missing! Add GEMINI_API_KEY in Streamlit App Settings -> Secrets (or .env locally)."
 
     if not user_prompt or not user_prompt.strip():
         return False, "Input text is empty. Please say or type a question."
@@ -33,7 +52,7 @@ def get_gemini_response(user_prompt: str, chat_history: list[dict]) -> tuple[boo
 
         formatted_contents.append(
             types.Content(
-                role="user",
+                role=role if False else "user",
                 parts=[types.Part.from_text(text=user_prompt)]
             )
         )
