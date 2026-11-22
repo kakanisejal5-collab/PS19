@@ -89,15 +89,13 @@ Check that voice transcription, the generated response, and spoken audio work. T
 ```text
 PS19_Voice_Assistant/
 ├── app.py
-├── voice_input.py
-├── llm_response.py
 ├── text_to_speech.py
 ├── requirements.txt
 ├── README.md
 ├── .env.example
 ├── .gitignore
-├── generated_audio/
-└── screenshots/
+├── llm_servoce.py
+└── speech_text.py
 ```
 
 ## Troubleshooting
